@@ -155,10 +155,10 @@ class Inetmodels:
         edges['source'] = edges['source'].replace(id2index)
         edges['target'] = edges['target'].replace(id2index)
         edges.columns = ['Source','Target', 'Weight', 'P-Value', 'FDR']
-        nodes = nodes.set_index('index')[['symbol', 'info1', 'info2', 'info3', 'location']]
-        nodes.columns = ['Symbol','Info1','Info2','Info3','AnalyteType']
+        nodes = nodes[['index' ,'symbol', 'info1', 'info2', 'info3', 'location']]
+        nodes.columns = ['Node','Symbol','Info1','Info2','Info3','AnalyteType']
         self.edges = edges
-        self.nodes = nodes
+        self.nodes = nodes.set_index('Node')
         
     def __printCategoryTypes(self):
         print('networkType: MON --> Multi-Omics Network')
