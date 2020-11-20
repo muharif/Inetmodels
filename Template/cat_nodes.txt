@@ -1,0 +1,1 @@
+Name	symbol	info1	info2	info3	location	category	cluster
