@@ -8,7 +8,7 @@ import pandas as pd
 
 class Inetmodels:
 
-    def __init__(self, verbose = False):
+    def __init__(self, verbose = True):
         self.verbose = verbose
         self.addr = "dev.inetmodels.com"
         self.header = {
@@ -24,6 +24,10 @@ class Inetmodels:
             1: "Normal Tissue",
             2: "Cancer Tissue"
         }
+        self.NT = {
+            'GCN': "Gene Co-Expression Network",
+            'MON': "Multi-Omics Network"
+        }
         self.__printCategoryTypes()
         self.NetworkDict = self.__getNetworkDict()
         
@@ -31,13 +35,13 @@ class Inetmodels:
         
         if networkType == 'MON':
             if ((categoryType > 0) and (categoryType <= len(self.MON.keys()))):
-                self.__printMONCategories(categoryType)
+                self.__printMONCategories(networkType, categoryType)
             else:
                 raise ValueError('for networkType %s, categoryType must be between 1-%d' % (networkType,len(self.MON.keys())))
 
         elif networkType == 'GCN':
             if ((categoryType > 0) and (categoryType <= len(self.GCN.keys()))):
-                self.__printGCNCategories(categoryType)
+                self.__printGCNCategories(networkType, categoryType)
             else:
                 raise ValueError('for networkType %s, categoryType must be between 1-%d' % (networkType,len(self.GCN.keys())))            
         else:
@@ -61,7 +65,7 @@ class Inetmodels:
         #Sanity Check
         if networkType == 'MON':
             if ((categoryType > 0) and (categoryType <= len(self.MON.keys()))):
-                if categoryName in self.Categories['Multi-Omics Network'][self.MON[categoryType]].keys():
+                if categoryName in self.Categories[networkType][self.MON[categoryType]].keys():
                     pass
                 else:
                     raise ValueError("Invalid categoryName, check valid categoryName with 'printCategories('MON',%d)'" % categoryType)
@@ -69,7 +73,7 @@ class Inetmodels:
                 raise ValueError('for networkType %s, categoryType must be between 1-%d' % (networkType,len(self.MON.keys())))
         elif networkType == 'GCN':
             if ((categoryType > 0) and (categoryType <= len(self.GCN.keys()))):
-                if categoryName in self.Categories['Gene Co-Expression Network'][self.GCN[categoryType]].keys():
+                if categoryName in self.Categories[networkType][self.GCN[categoryType]].keys():
                     pass
                 else:
                     raise ValueError("Invalid categoryName, check valid categoryName with 'printCategories('GCN',%d)'" % categoryType)
@@ -88,7 +92,7 @@ class Inetmodels:
             raise TypeError('categoryName has to be string')
         if (type(search) != list) | (len(search) < 1):
             raise TypeError('search has to be list of analytes')
-        if type(pruning) != float:
+        if type(float(pruning)) != float:
             raise TypeError('pruning has to be float/decimal')
         if (type(nodeLimit) != int) | (nodeLimit < 1):
             raise TypeError('nodeLimit has to be integer > 0')
@@ -124,9 +128,9 @@ class Inetmodels:
             firstNeighbour = "false"
         
         if networkType == 'MON':
-            self.__queryMON(categoryType,categoryName,analytes,analyteTypes,pruning,nodeLimit,firstNeighbour)
+            self.__queryMON(networkType,categoryType,categoryName,analytes,analyteTypes,pruning,nodeLimit,firstNeighbour)
         if networkType == 'GCN':
-            self.__queryGCN(categoryType,categoryName,analytes,analyteTypes,pruning,nodeLimit,firstNeighbour)
+            self.__queryGCN(networkType, categoryType,categoryName,analytes,analyteTypes,pruning,nodeLimit,firstNeighbour)
         
         
     
@@ -134,8 +138,8 @@ class Inetmodels:
         conn = http.client.HTTPConnection(self.addr)
         conn.request("GET", "/api/data-types", "", self.header)
         self.Categories = json.loads(conn.getresponse().read())['categoryDataTypeMap']
-        self.Categories['GCN'] = a_dict.pop('Gene Co-Expression Network')
-        self.Categories['MON'] = a_dict.pop('Multi-Omics Network')
+        self.Categories['GCN'] = self.Categories.pop('Gene Co-Expression Network')
+        self.Categories['MON'] = self.Categories.pop('Multi-Omics Network')
         conn.close()
 
     def __sendQuery(self):
@@ -165,13 +169,13 @@ class Inetmodels:
             print('\tcategoryType %d: %s' % (i,self.GCN[i]))
         
     
-    def __printMONCategories(self, categoryType = 1):
+    def __printMONCategories(self, networkType, categoryType = 1):
         print(networkType + ' (Multi-Omics Network)')
         print('\t%d: %s' % (categoryType,self.MON[categoryType]))
         for i in sorted(self.Categories[networkType][self.MON[categoryType]].keys()):
             print('\t\t' + i)
     
-    def __printGCNCategories(self, categoryType = 1):
+    def __printGCNCategories(self, networkType, categoryType = 1):
         print(networkType + ' (Gene Co-Expression Network)')
         print('\t%d: %s' % (categoryType,self.GCN[categoryType]))
         for i in sorted(self.Categories[networkType][self.GCN[categoryType]].keys()):
@@ -179,17 +183,18 @@ class Inetmodels:
         
     
     def __payload(self, networkType,categoryType,categoryName,analytes,analyteTypes,pruning,nodeLimit,firstNeighbour):
+        networkType = self.NT[networkType]
         self.__JSONquery = "{\n    \"networkType\": \"%s\",\n    \"categoryType\": \"%s\",\n    \"categoryName\": \"%s\",\n    \"analytes\" : [\n        %s    ],\n    \"analyteTypes\" : [\n        %s    ],\n    \"pruning\" : %d,\n    \"nodeLimit\" : %d,\n    \"firstNeighbour\" : %s\n}" % (networkType,categoryType,categoryName,analytes,analyteTypes,pruning,nodeLimit,firstNeighbour)
         if self.verbose:
             print('Your Request:')
             print(self.__JSONquery)
         
-    def __queryGCN(self, categoryType,categoryName,analytes,analyteTypes,pruning,nodeLimit,firstNeighbour):
+    def __queryGCN(self, networkType, categoryType,categoryName,analytes,analyteTypes,pruning,nodeLimit,firstNeighbour):
         categoryType = self.GCN[categoryType]
         self.__payload(networkType,categoryType,categoryName,analytes,analyteTypes,pruning,nodeLimit,firstNeighbour)
         self.__sendQuery()
         
-    def __queryMON(self, categoryType,categoryName,analytes,analyteTypes,pruning,nodeLimit,firstNeighbour):
+    def __queryMON(self, networkType, categoryType,categoryName,analytes,analyteTypes,pruning,nodeLimit,firstNeighbour):
         categoryType = self.MON[categoryType]
         self.__payload(networkType,categoryType,categoryName,analytes,analyteTypes,pruning,nodeLimit,firstNeighbour)
         self.__sendQuery()
