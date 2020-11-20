@@ -1,9 +1,5 @@
 channels:
 - conda-forge
-- bioconda
-- anaconda
-- r
-- rdonnelly
 - defaults
 
 dependencies:
