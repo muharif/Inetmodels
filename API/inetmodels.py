@@ -15,35 +15,29 @@ class Inetmodels:
             'content-type': "application/json",
             'cache-control': "no-cache",
         }
-        self.MON = {
-            1: "SCAPIS - SciLifeLab Wellness Profiling Study",
-            2: "Integrative Personal Omics Study (Male Only)",
-            3: "P100 Study"
-        }
-        self.GCN = {
-            1: "Normal Tissue",
-            2: "Cancer Tissue"
-        }
         self.NT = {
             'GCN': "Gene Co-Expression Network",
             'MON': "Multi-Omics Network"
         }
-        self.__printCategoryTypes()
         self.NetworkDict = self.__getNetworkDict()
+        self.MON = dict(enumerate(self.Categories['MON'].keys()))
+        self.GCN = dict(enumerate(self.Categories['GCN'].keys()))
+        self.__printCategoryTypes()
+
         
     def printCategories(self, networkType = '', categoryType = 0):
         
         if networkType == 'MON':
-            if ((categoryType > 0) and (categoryType <= len(self.MON.keys()))):
+            if ((categoryType >= 0) and (categoryType <= len(self.MON.keys()))):
                 self.__printMONCategories(networkType, categoryType)
             else:
-                raise ValueError('for networkType %s, categoryType must be between 1-%d' % (networkType,len(self.MON.keys())))
+                raise ValueError('for networkType %s, categoryType must be between 0-%d' % (networkType,len(self.MON.keys())-1))
 
         elif networkType == 'GCN':
-            if ((categoryType > 0) and (categoryType <= len(self.GCN.keys()))):
+            if ((categoryType >= 0) and (categoryType <= len(self.GCN.keys()))):
                 self.__printGCNCategories(networkType, categoryType)
             else:
-                raise ValueError('for networkType %s, categoryType must be between 1-%d' % (networkType,len(self.GCN.keys())))            
+                raise ValueError('for networkType %s, categoryType must be between 0-%d' % (networkType,len(self.GCN.keys())-1))        
         else:
             raise ValueError('networkType has to be MON or GCN, for Multi-Omics Network and Gene Co-Expression Network respectively')
     
@@ -64,21 +58,21 @@ class Inetmodels:
         
         #Sanity Check
         if networkType == 'MON':
-            if ((categoryType > 0) and (categoryType <= len(self.MON.keys()))):
+            if ((categoryType >= 0) and (categoryType < len(self.MON.keys()))):
                 if categoryName in self.Categories[networkType][self.MON[categoryType]].keys():
                     pass
                 else:
                     raise ValueError("Invalid categoryName, check valid categoryName with 'printCategories('MON',%d)'" % categoryType)
             else:
-                raise ValueError('for networkType %s, categoryType must be between 1-%d' % (networkType,len(self.MON.keys())))
+                raise ValueError('for networkType %s, categoryType must be between 0-%d' % (networkType,len(self.MON.keys())-1))
         elif networkType == 'GCN':
-            if ((categoryType > 0) and (categoryType <= len(self.GCN.keys()))):
+            if ((categoryType >= 0) and (categoryType < len(self.GCN.keys()))):
                 if categoryName in self.Categories[networkType][self.GCN[categoryType]].keys():
                     pass
                 else:
                     raise ValueError("Invalid categoryName, check valid categoryName with 'printCategories('GCN',%d)'" % categoryType)
             else:
-                raise ValueError('for networkType %s, categoryType must be between 1-%d' % (networkType,len(self.GCN.keys())))        
+                raise ValueError('for networkType %s, categoryType must be between 0-%d' % (networkType,len(self.GCN.keys())-1))        
         else:
             raise ValueError('networkType has to be MON or GCN, for Multi-Omics Network and Gene Co-Expression Network respectively')
         
