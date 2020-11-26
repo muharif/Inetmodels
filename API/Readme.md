@@ -7,4 +7,6 @@ We have developed a python package (soon to be submitted to conda/pip) to access
 
 This API is still under development. We are planning to submit the code to Conda or PIP for easier installation.
 
+Please be aware that we limit the API to 1 query per second. This might change in the future.
+
 Maintainer: muhammad.arif [at] scilifelab.se
