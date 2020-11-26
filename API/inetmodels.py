@@ -149,8 +149,8 @@ class Inetmodels:
         edges['source'] = edges['source'].replace(id2index)
         edges['target'] = edges['target'].replace(id2index)
         edges.columns = ['Source','Target', 'Weight', 'P-Value', 'FDR']
-        nodes = nodes[['index' ,'symbol', 'info1', 'info2', 'info3', 'location']]
-        nodes.columns = ['Node','Symbol','Info1','Info2','Info3','AnalyteType']
+        nodes = nodes[set(['index' ,'symbol', 'info1', 'info2', 'info3', 'location']).intersection(nodes.columns)].rename(columns = {'index':'node'})
+        nodes.columns = [i.capitalize() for i in nodes.columns]
         self.edges = edges
         self.nodes = nodes.set_index('Node')
         
