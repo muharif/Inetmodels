@@ -10,10 +10,10 @@ class Inetmodels:
 
     def __init__(self, verbose = True):
         self.verbose = verbose
-        self.addr = "dev.inetmodels.com"
+        self.addr = "inetmodels.com"
         self.header = {
             'content-type': "application/json",
-            'cache-control': "no-cache",
+#             'cache-control': "no-cache",
         }
         self.NT = {
             'GCN': "Gene Co-Expression Network",
@@ -53,7 +53,8 @@ class Inetmodels:
               metabolite = True, #boolean, default = True 
               protein = True, #boolean, default = True 
               clinical = True, #boolean, default = True 
-              microbiome = True #boolean, default = True 
+              gut_microbiome = True, #boolean, default = True 
+              oral_microbiome = True #boolean, default = True 
              ):
         
         #Sanity Check
@@ -100,8 +101,10 @@ class Inetmodels:
             raise TypeError('protein has to be True or False (boolean)')       
         if type(clinical) != bool:
             raise TypeError('metabolite has to be True or False (boolean)')
-        if type(microbiome) != bool:
-            raise TypeError('protein has to be True or False (boolean)')   
+        if type(oral_microbiome) != bool:
+            raise TypeError('oral_microbiome has to be True or False (boolean)')   
+        if type(gut_microbiome) != bool:
+            raise TypeError('gut_microbiome has to be True or False (boolean)')  
             
         analytes = ',\n\t'.join(["\"%s\"" % i for i in search])+'\n'
         analyteTypes_lst = []
@@ -111,8 +114,10 @@ class Inetmodels:
             analyteTypes_lst.append("PROTEIN")
         if clinical:
             analyteTypes_lst.append("CLINICAL")
-        if microbiome:
-            analyteTypes_lst.append("MICROBIOME")
+        if oral_microbiome:
+            analyteTypes_lst.append("ORAL MICROBIOME")
+        if gut_microbiome:
+            analyteTypes_lst.append("GUT MICROBIOME")
         if gene:
             analyteTypes_lst.append("GENE")
         analyteTypes = ',\n\t'.join(["\"%s\"" % i for i in analyteTypes_lst])+'\n'
@@ -129,28 +134,34 @@ class Inetmodels:
         
     
     def __getNetworkDict(self):
-        conn = http.client.HTTPConnection(self.addr)
-        conn.request("GET", "/api/data-types", "", self.header)
+        conn = http.client.HTTPSConnection(self.addr)
+        conn.request("GET", "/api/data-types", "")
         self.Categories = json.loads(conn.getresponse().read())['categoryDataTypeMap']
         self.Categories['GCN'] = self.Categories.pop('Gene Co-Expression Network')
         self.Categories['MON'] = self.Categories.pop('Multi-Omics Network')
         conn.close()
 
     def __sendQuery(self):
-        conn = http.client.HTTPConnection(self.addr)
+        conn = http.client.HTTPSConnection(self.addr)
         conn.request("POST", "/api/query", self.__JSONquery, self.header)
         res = conn.getresponse()
         val = res.read()
         data = json.loads(val)
         conn.close()
+        if len(data['links']) == 0:
+            raise ValueError('No network has been found that fulfills the selected filters, please adjust it!')  
         edges = pd.DataFrame(data['links'])[['source','target','correlation','pvalue','padj']]
         nodes = pd.DataFrame(data['nodes']).set_index('id')
         id2index = nodes['index'].to_dict()
         edges['source'] = edges['source'].replace(id2index)
         edges['target'] = edges['target'].replace(id2index)
         edges.columns = ['Source','Target', 'Weight', 'P-Value', 'FDR']
-        nodes = nodes[set(['index' ,'symbol', 'info1', 'info2', 'info3', 'location']).intersection(nodes.columns)].rename(columns = {'index':'node'})
-        nodes.columns = [i.capitalize() for i in nodes.columns]
+        nodes_col = ['index' ,'symbol', 'info1', 'info2', 'info3', 'location']
+        diff = set(nodes_col).difference(nodes.columns)
+        for i in diff:
+            nodes[i] = float('NaN')
+        nodes = nodes[['index' ,'symbol', 'info1', 'info2', 'info3', 'location']]
+        nodes.columns = ['Node','Symbol','Info1','Info2','Info3','AnalyteType']
         self.edges = edges
         self.nodes = nodes.set_index('Node')
         
