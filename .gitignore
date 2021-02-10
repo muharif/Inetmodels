@@ -7,4 +7,5 @@ Data/
 .RData
 API/inetmodelsAPI.ipynb
 API/API_test-Copy1.ipynb
-Analysis/
+API/__pycache__/*
+#Analysis/
